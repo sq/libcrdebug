@@ -110,6 +110,11 @@ namespace crdebug {
             return SquaredFuture.DoNotThrow();
         }
 
+        // Why can't it infer this?
+        public FutureAwaitExtensionMethods.FutureWithDisposedValue<T> ValueWhenDisposed (object value) {
+            return SquaredFuture.ValueWhenDisposed((T)value);
+        }
+
         public FutureAwaitExtensionMethods.FutureAwaiter<T> GetAwaiter () {
             return SquaredFuture.GetAwaiter();
         }
