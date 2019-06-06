@@ -1,0 +1,3 @@
+[submodule "External/Fracture"]
+	path = External/Fracture
+	url = https://github.com/sq/Fracture.git
