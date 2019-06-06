@@ -9,6 +9,8 @@ using Squared.Threading;
 
 namespace crdebug {
     public interface IFuture : IDisposable {
+        bool CompletedSuccessfully { get; }
+        Exception Exception { get; }
         Type ResultType { get; }
         FutureAwaitExtensionMethods.IFutureAwaiter GetAwaiter ();
         void SetResult (object value);
