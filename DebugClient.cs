@@ -10,7 +10,6 @@ using crdebug.Exceptions;
 using crdebug.RemoteTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Squared.Threading;
 
 namespace crdebug {
     public delegate void ChromeRemoteEventHandler (string method, JToken args);
@@ -116,19 +115,19 @@ namespace crdebug {
                     if (PendingTokens.TryGetValue(id, out IFuture token)) {
                         if (obj.TryGetValue("error", out JToken error)) {
                             var errorInfo = error.ToObject<ErrorInfo>();
-                            token.SetResult2(null, ExceptionDispatchInfo.Capture(
+                            token.SetException(ExceptionDispatchInfo.Capture(
                                 new ChromeRemoteException(errorInfo.code, errorInfo.message)
                             ));
                         } else if (!obj.TryGetValue("result", out JToken result)) {
-                            token.SetResult2(null, null);
+                            token.SetResult(null);
                         } else {
                             try {
                                 if (token.ResultType != typeof(object))
-                                    token.SetResult(result.ToObject(token.ResultType), null);
+                                    token.SetResult(result.ToObject(token.ResultType));
                                 else
-                                    token.SetResult(result, null);
+                                    token.SetResult(result);
                             } catch (Exception exc) {
-                                token.SetResult2(null, System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exc));
+                                token.SetException(ExceptionDispatchInfo.Capture(exc));
                             }
                         }
                         PendingTokens.Remove(id);
@@ -141,7 +140,7 @@ namespace crdebug {
                         while (list.Count > 0) {
                             var f = list[0];
                             list.RemoveAt(0);
-                            f.SetResult2(ConvertResult(f.ResultType, obj["params"]), null);
+                            f.SetResult(ConvertResult(f.ResultType, obj["params"]));
                         }
                     }
                     OnEvent?.Invoke(method, obj["params"]);
@@ -164,7 +163,7 @@ namespace crdebug {
 
             var _f = f;
             if (f == null)
-                _f = Util.IncompleteFuture<object>();
+                _f = new Future<object>();
 
             PendingTokens.Add(_id, _f);
 
@@ -205,7 +204,7 @@ namespace crdebug {
             if (!EventWaits.TryGetValue(method, out List<IFuture> list))
                 EventWaits[method] = list = new List<IFuture>();
 
-            var result = Util.IncompleteFuture<T>();
+            var result = new Future<T>();
             list.Add(result);
 
             return result;
@@ -213,19 +212,19 @@ namespace crdebug {
 
         public async Task<T> SendAndGetResult<T> (string method, object p = null) {
             var id = NextId++;
-            var f = Util.IncompleteFuture<T>();
+            var f = new Future<T>();
             await Send(method, p, id, f);
             return await f;
         }
 
         public async Task<ResultOrException<T>> SendAndGetResultOrException<T> (string method, object p = null) {
             var id = NextId++;
-            var f = Util.IncompleteFuture<T>();
+            var f = new Future<T>();
             await Send(method, p, id, f);
             await f.DoNotThrow();
-            if (f.Failed)
+            if (f.Exception != null)
                 return new ResultOrException<T> {
-                    Exception = ExceptionDispatchInfo.Capture(f.Error)
+                    Exception = ExceptionDispatchInfo.Capture(f.Exception)
                 };
             else
                 return new ResultOrException<T> {
