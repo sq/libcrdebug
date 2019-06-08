@@ -10,7 +10,7 @@ namespace crdebug.RemoteTypes {
     }
 
     public struct NavigateResult {
-        public int frameId;
+        public string frameId;
         public string errorText;
     }
 
