@@ -237,4 +237,25 @@ namespace crdebug.RemoteTypes {
         public string url;
         public string websocketDebuggerUrl;
     }
+
+    public struct DOMRect {
+        public double x, y, width, height;
+    }
+
+    public struct LayoutMetrics {
+        public struct LayoutViewport {
+            public int pageX, pageY;
+            public int clientWidth, clientHeight;
+        }
+        public struct VisualViewport {
+            public double offsetX, offsetY;
+            public double pageX, pageY;
+            public double clientWidth, clientHeight;
+            public double scale, zoom;
+        }
+
+        public LayoutViewport layoutViewport;
+        public VisualViewport visualViewport;
+        public DOMRect contentSize;
+    }
 }

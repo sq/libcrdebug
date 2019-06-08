@@ -290,6 +290,11 @@ namespace crdebug {
                     return result?.body;
             }
 
+            public async Task<LayoutMetrics> GetLayoutMetrics () {
+                var result = Client.SendAndGetResult<LayoutMetrics>("Page.getLayoutMetrics");
+                return await result;
+            }
+
             public async Task Click (int x, int y) {
                 var p = new {
                     type = "mousePressed",
