@@ -194,6 +194,20 @@ namespace crdebug {
                 return result.node;
             }
 
+            public async Task<List<Node>> DescribeNodes (IEnumerable<NodeId> ids, int depth = 1) {
+                var tasks = new List<Task<BoxedNode>>();
+                foreach (var id in ids) {
+                    tasks.Add(
+                        Client.SendAndGetResult<BoxedNode>("DOM.describeNode", new { id.nodeId, depth })
+                    );
+                }
+
+                var result = new List<Node>();
+                foreach (var task in tasks)
+                    result.Add((await task).node);
+                return result;
+            }
+
             public async Task<NodeId> QuerySelector (string selector, int? parentNodeId = null) {
                 int nodeId;
                 if (parentNodeId.HasValue)

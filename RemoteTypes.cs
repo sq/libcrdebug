@@ -71,6 +71,10 @@ namespace crdebug.RemoteTypes {
         public override string ToString () {
             return $"{nodeName} #{nodeId}";
         }
+
+        public string GetAttribute (string name) {
+            return Attributes.FirstOrDefault(a => string.Equals(a.Key, name, StringComparison.OrdinalIgnoreCase)).Value;
+        }
     }
 
     public struct BoxModel {
