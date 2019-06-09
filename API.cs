@@ -99,6 +99,7 @@ namespace crdebug {
                         OnNavigated?.Invoke(frame);
                         break;
                     case "Page.frameStartedLoading":
+                        IsScreencastStarted = false;
                         OnStartedLoading?.Invoke(args["frameId"].ToString());
                         break;
                     case "Page.loadEventFired":
