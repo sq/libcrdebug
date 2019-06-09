@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Squared.Threading", "C:\Use
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Squared.Util", "C:\Users\Katelyn\Documents\Projects\libcrdebug\External\Fracture\Squared\Util\Squared.Util.csproj", "{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuerySelector", "Tests\QuerySelector\QuerySelector.csproj", "{2D0CF246-1FDE-4E6A-8742-933AA1243C69}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Release|x86.ActiveCfg = Release|x86
 		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Release|x86.Build.0 = Release|x86
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Debug|x86.Build.0 = Debug|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Mono|Any CPU.ActiveCfg = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Mono|Any CPU.Build.0 = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Mono|x86.ActiveCfg = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Mono|x86.Build.0 = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Release|x86.ActiveCfg = Release|Any CPU
+		{2D0CF246-1FDE-4E6A-8742-933AA1243C69}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

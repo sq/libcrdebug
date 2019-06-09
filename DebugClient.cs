@@ -47,8 +47,18 @@ namespace crdebug {
 
         public event ChromeRemoteEventHandler OnEvent;
 
+        private Task MainLoopInstance = null;
         private Task ActiveSendQueueTask = null;
         private readonly Queue<QueuedSend> QueuedSends = new Queue<QueuedSend>();
+
+        /// <summary>
+        /// Fired on unhandled errors. Return true to indicate that you handled the error.
+        /// </summary>
+        public event Func<Exception, bool> OnError;
+        /// <summary>
+        /// Fired whenever a new message is received. Return true to indicate that you handled it.
+        /// </summary>
+        public event Func<string, bool> OnIncomingJson;
 
         public DebugClient (BrowserInstance browser, TabInfo tab) {
             Browser = browser;
@@ -61,6 +71,8 @@ namespace crdebug {
 
         public async Task Connect () {
             await WebSocket.ConnectAsync(new Uri(Tab.websocketDebuggerUrl), default(CancellationToken));
+
+            MainLoopInstance = MainLoop();
         }
 
         private async Task SendQueueTask () {
@@ -74,7 +86,7 @@ namespace crdebug {
             }
         }
 
-        public async Task MainLoop () {
+        private async Task MainLoop () {
             var readBuffer = new ArraySegment<byte>(new byte[1024 * 1024 * 16]);
 
             WebSocketReceiveResult wsrr;
@@ -91,8 +103,8 @@ namespace crdebug {
                         count += wsrr.Count;
                     } while (!wsrr.EndOfMessage);
                 } catch (Exception exc) {
-                    Console.WriteLine(exc);
-                    break;
+                    if ((OnError == null) || !OnError(exc))
+                        Console.Error.WriteLine(exc);
                 }
 
                 string json = "";
@@ -101,11 +113,16 @@ namespace crdebug {
                     json = Encoding.UTF8.GetString(readBuffer.Array, 0, count);
                     obj = (JObject)JsonConvert.DeserializeObject(json);
                 } catch (Exception exc) {
-                    Console.WriteLine("JSON parse error: {0}", exc);
-                    Console.WriteLine("// Failed json blob below //");
-                    Console.WriteLine(json);
-                    Console.WriteLine("// Failed json blob above //");
+                    if ((OnError == null) || !OnError(exc)) {
+                        Console.Error.WriteLine("JSON parse error: {0}", exc);
+                        Console.Error.WriteLine("// Failed json blob below //");
+                        Console.Error.WriteLine(json);
+                        Console.Error.WriteLine("// Failed json blob above //");
+                    }
                 }
+
+                if ((OnIncomingJson != null) && OnIncomingJson(json))
+                    continue;
 
                 if (obj == null)
                     continue;
@@ -131,8 +148,6 @@ namespace crdebug {
                             }
                         }
                         PendingTokens.Remove(id);
-                    } else {
-                        Console.WriteLine(json);
                     }
                 } else if (obj["method"] != null) {
                     var method = obj["method"].ToString();
@@ -147,7 +162,7 @@ namespace crdebug {
                 }
             }
 
-            // Dispose();
+            await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Main loop terminated", CancellationToken.None);
         }
 
         public async Task Send (string method, object p = null, int? id = null, IFuture f = null) {
@@ -245,7 +260,10 @@ namespace crdebug {
 
         public bool IsConnected {
             get {
-                return (WebSocket != null) && (WebSocket.State == WebSocketState.Open);
+                return (WebSocket != null) && 
+                    (WebSocket.State == WebSocketState.Open) &&
+                    (MainLoopInstance != null) &&
+                    !MainLoopInstance.IsCompleted;
             }
         }
 
