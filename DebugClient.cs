@@ -91,6 +91,10 @@ namespace crdebug {
             MainLoopInstance = MainLoop();
         }
 
+        public async Task WaitForClose () {
+            await MainLoopInstance;
+        }
+
         private async Task SendQueueTask () {
             while (WebSocket.State == WebSocketState.Open) {
                 while (QueuedSends.Count > 0) {
