@@ -201,6 +201,9 @@ namespace crdebug {
             }
 
             public async Task<Node> DescribeNode (NodeId id, int? depth = null) {
+                if (!id)
+                    throw new ArgumentNullException("id");
+
                 object p;
                 if (id.backendNodeId != null)
                     p = new { id.backendNodeId, depth = (depth ?? Client.DefaultDescriptionDepth) };
@@ -224,6 +227,9 @@ namespace crdebug {
             public async Task<List<Node>> DescribeNodes (IEnumerable<NodeId> ids, int? depth = null) {
                 var tasks = new Dictionary<NodeId, Task<BoxedNode>>();
                 foreach (var id in ids) {
+                    if (!id)
+                        throw new ArgumentNullException("ids");
+
                     object p;
                     if (id.backendNodeId != null)
                         p = new { id.backendNodeId, depth = (depth ?? Client.DefaultDescriptionDepth) };
@@ -305,6 +311,8 @@ namespace crdebug {
                     throw new Exception("No parentNodeId to query inside of");
 
                 var node = await Client.SendAndGetResult<NodeId>("DOM.querySelector", p);
+                if (!node)
+                    return null;
                 var result = await DescribeNode(node, depth);
                 return result;
             }
@@ -329,19 +337,23 @@ namespace crdebug {
             }
 
             public async Task<BoxModel> GetBoxModel (NodeId id) {
+                BoxModel model = default(BoxModel);
+
                 try {
                     var result = await Client.SendAndGetResultOrException<GetBoxModelResult>("DOM.getBoxModel", new {
                         id.nodeId
                     });
-                    if (result) {
-                        result.Result.model.Id = id;
-                        return result.Result.model;
-                    } else {
-                        return default(BoxModel);
+
+                    if (result.Exception != null) {
+                        model.Exception = result.Exception;
+                    } else if (result.Result != null) {
+                        model = result.Result.model;
+                        model.Id = id;
                     }
-                } catch (ChromeRemoteException) {
-                    return default(BoxModel);
+                } catch (Exception exc) {
+                    model.Exception = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exc);
                 }
+                return model;
             }
 
             public async Task StartScreencast (

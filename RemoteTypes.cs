@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ namespace crdebug.RemoteTypes {
         }
 
         public static implicit operator bool (NodeId id) {
-            return (id.nodeId != 0) || (id.backendNodeId != 0);
+            return ((id.nodeId ?? 0) != 0) || ((id.backendNodeId ?? 0) != 0);
         }
     }
 
@@ -81,11 +82,14 @@ namespace crdebug.RemoteTypes {
 
         public int[] content, padding, border, margin;
         public int width, height;
+        internal ExceptionDispatchInfo Exception;
 
         public int ContentLeft {
             get {
                 if (!Id)
                     return 0;
+                if (Exception != null)
+                    Exception.Throw();
                 return content[0];
             }
         }
@@ -94,6 +98,8 @@ namespace crdebug.RemoteTypes {
             get {
                 if (!Id)
                     return 0;
+                if (Exception != null)
+                    Exception.Throw();
                 return content[1];
             }
         }
@@ -102,6 +108,8 @@ namespace crdebug.RemoteTypes {
             get {
                 if (!Id)
                     return 0;
+                if (Exception != null)
+                    Exception.Throw();
                 return content[2];
             }
         }
@@ -110,12 +118,14 @@ namespace crdebug.RemoteTypes {
             get {
                 if (!Id)
                     return 0;
+                if (Exception != null)
+                    Exception.Throw();
                 return content[5];
             }
         }
 
         public static implicit operator bool (BoxModel model) {
-            return model.Id;
+            return (model.Id.nodeId != 0) && (model.content != null) && (model.content.Length >= 6) && (model.Exception == null);
         }
     }
 
