@@ -71,8 +71,13 @@ namespace crdebug {
             public event Action<Request> OnRequestStarted;
             public event Action<Request, Response> OnRequestComplete;
             public event Action OnLoaded;
+            public event Action<string, ScreencastFrameMetadata> OnScreencastFrame;
 
             private int NextGroupId = 1;
+
+            public string MostRecentFrameBase64 { get; private set; }
+            public ScreencastFrameMetadata MostRecentFrameMetadata { get; private set; }
+            public bool IsScreencastStarted { get; private set; }
 
             public APIInstance (DebugClient client) {
                 Client = client;
@@ -123,6 +128,13 @@ namespace crdebug {
                         req.requestId = reqId;
                         Requests[reqId] = req;
                         OnRequestStarted?.Invoke(req);
+                        break;
+                    case "Page.screencastFrame":
+                        var sessionId = (int)args["sessionId"];
+                        var t = Client.Send("Page.screencastFrameAck", new { sessionId });
+                        MostRecentFrameBase64 = args["data"].ToString();
+                        MostRecentFrameMetadata = args["metadata"].ToObject<ScreencastFrameMetadata>();
+                        OnScreencastFrame?.Invoke(MostRecentFrameBase64, MostRecentFrameMetadata);
                         break;
                 }
             }
@@ -250,10 +262,41 @@ namespace crdebug {
                 }
             }
 
-            public async Task<byte[]> CaptureScreenshot (string format = "jpeg", int quality = 75) {
-                var result = await Client.SendAndGetResult<Screenshot>("Page.captureScreenshot", new {
-                    format, quality
-                });
+            public async Task StartScreencast (
+                string format = "jpeg", int quality = 75, 
+                int? maxWidth = null, int? maxHeight = null,
+                int everyNthFrame = 1
+            ) {
+                IsScreencastStarted = true;
+                var dict = new Dictionary<string, object> {
+                    { "format", format },
+                    { "quality", quality },
+                    { "everyNthFrame", 1 }
+                };
+                if (maxWidth != null)
+                    dict.Add("maxWidth", maxWidth.Value);
+                if (maxHeight != null)
+                    dict.Add("maxHeight", maxHeight.Value);
+                await Client.Send(
+                    "Page.startScreencast", dict
+                );
+            }
+
+            public async Task StopScreencast () {
+                await Client.Send("Page.stopScreencast");
+                IsScreencastStarted = false;
+            }
+
+            public async Task<byte[]> CaptureScreenshot (string format = "jpeg", int quality = 75, int? maxWidth = null, int? maxHeight = null) {
+                var dict = new Dictionary<string, object> {
+                    { "format", format },
+                    { "quality", quality }
+                };
+                if (maxWidth != null)
+                    dict.Add("maxWidth", maxWidth.Value);
+                if (maxHeight != null)
+                    dict.Add("maxHeight", maxHeight.Value);
+                var result = await Client.SendAndGetResult<Screenshot>("Page.captureScreenshot", dict);
                 return Convert.FromBase64String(result.data);
             }
 
@@ -293,6 +336,16 @@ namespace crdebug {
             public async Task<LayoutMetrics> GetLayoutMetrics () {
                 var result = Client.SendAndGetResult<LayoutMetrics>("Page.getLayoutMetrics");
                 return await result;
+            }
+
+            public async Task MouseMove (int x, int y) {
+                var p = new {
+                    type = "mouseMoved",
+                    x, y,
+                    button = "none",
+                    clickCount = 0
+                };
+                await Client.Send("Input.dispatchMouseEvent", p);
             }
 
             public async Task Click (int x, int y) {

@@ -258,4 +258,10 @@ namespace crdebug.RemoteTypes {
         public VisualViewport visualViewport;
         public DOMRect contentSize;
     }
+
+    public class ScreencastFrameMetadata {
+        public double offsetTop, pageScaleFactor;
+        public double deviceWidth, deviceHeight;
+        public double scrollOffsetX, scrollOffsetY;
+    };
 }
