@@ -43,18 +43,22 @@ namespace QuerySelector {
                 throw new Exception("No tab containing queryselector.html found");
 
             var conn = new DebugClient(browser, tab);
+            conn.ReceiveTraceStream = Console.Out;
+            conn.SendTraceStream = Console.Out;
             Console.WriteLine("Connecting");
             await conn.Connect();
 
-            Console.WriteLine("Evaluating window");
-            var window = await conn.API.Evaluate("window");
-            Console.WriteLine(window.className);
-
             Console.WriteLine("Querying selectors");
+            var div = await conn.API.QuerySelector("div");
+            if (!div)
+                throw new Exception("Failed to find div");
+            var divDescription = await conn.API.DescribeNode(div, 0);
             var span1 = await conn.API.QuerySelector("span#span1");
-            var span2 = await conn.API.QuerySelector("span#span2");
+            var span2 = await conn.API.QuerySelector("span#span2", divDescription.Id);
             if (!span1 || !span2)
                 throw new Exception("Failed to find span1 and span2");
+
+            Console.WriteLine("Querying inside selector");
 
             await CheckDescriptions(conn, span1, span2);
 

@@ -177,18 +177,18 @@ namespace crdebug {
                 var result = await Client.SendAndGetResult<NodeId>("DOM.getNodeForLocation", new {
                     x, y
                 });
-                return new NodeId(result.nodeId);
+                return result;
             }
 
-            public async Task<Node> GetDocument (bool cached = true, int depth = 3) {
+            public async Task<Node> GetDocument (bool cached = true, int? depth = null) {
                 if (CachedDocument != null) {
-                    if (CachedDocument.depth < depth)
+                    if (CachedDocument.depth < (depth ?? Client.DefaultDescriptionDepth))
                         cached = false;
                 }
                 if (cached && CachedDocument != null)
                     return CachedDocument;
                 var result = await Client.SendAndGetResult<Root>("DOM.getDocument", new {
-                    depth
+                    depth = (depth ?? Client.DefaultDescriptionDepth)
                 });
                 return (CachedDocument = result.root);
             }
@@ -200,51 +200,96 @@ namespace crdebug {
                 return body;
             }
 
-            public async Task<Node> DescribeNode (NodeId id, int depth = 1) {
-                var result = await Client.SendAndGetResult<BoxedNode>("DOM.describeNode", new {
-                    id.nodeId, depth
-                });
-                return result.node;
+            public async Task<Node> DescribeNode (NodeId id, int? depth = null) {
+                object p;
+                if (id.backendNodeId != null)
+                    p = new { id.backendNodeId, depth = (depth ?? Client.DefaultDescriptionDepth) };
+                else if (id.nodeId != null)
+                    p = new { id.nodeId, depth = (depth ?? Client.DefaultDescriptionDepth) };
+                else
+                    throw new Exception("Neither backendNodeId or nodeId specified");
+
+                var boxed = await Client.SendAndGetResult<BoxedNode>("DOM.describeNode", p);
+                var result = boxed.node;
+
+                // workaround for describeNode bug https://bugs.chromium.org/p/chromium/issues/detail?id=972441
+                if (result.nodeId == 0)
+                    result.nodeId = id.nodeId ?? 0;
+                if (result.backendNodeId == 0)
+                    result.backendNodeId = id.backendNodeId;
+
+                return result;
             }
 
-            public async Task<List<Node>> DescribeNodes (IEnumerable<NodeId> ids, int depth = 1) {
-                var tasks = new List<Task<BoxedNode>>();
+            public async Task<List<Node>> DescribeNodes (IEnumerable<NodeId> ids, int? depth = null) {
+                var tasks = new Dictionary<NodeId, Task<BoxedNode>>();
                 foreach (var id in ids) {
+                    object p;
+                    if (id.backendNodeId != null)
+                        p = new { id.backendNodeId, depth = (depth ?? Client.DefaultDescriptionDepth) };
+                    else if (id.nodeId != null)
+                        p = new { id.nodeId, depth = (depth ?? Client.DefaultDescriptionDepth) };
+                    else
+                        throw new Exception("Neither backendNodeId or nodeId specified");
                     tasks.Add(
-                        Client.SendAndGetResult<BoxedNode>("DOM.describeNode", new { id.nodeId, depth })
+                        id, Client.SendAndGetResult<BoxedNode>("DOM.describeNode", p)
                     );
                 }
 
-                var result = new List<Node>();
-                foreach (var task in tasks)
-                    result.Add((await task).node);
+                var results = new List<Node>();
+                foreach (var id in ids) {
+                    var task = tasks[id];
+                    var result = (await task).node;
+
+                    // workaround for describeNode bug https://bugs.chromium.org/p/chromium/issues/detail?id=972441
+                    if (result.nodeId == 0)
+                        result.nodeId = id.nodeId ?? 0;
+                    if (result.backendNodeId == 0)
+                        result.backendNodeId = id.backendNodeId ?? 0;
+
+                    results.Add(result);
+                }
+                return results;
+            }
+
+            private async Task<(int? nodeId, int? backendNodeId)> GetParentNodeIds (NodeId? parentNodeId) {
+                if (parentNodeId != null)
+                    return (parentNodeId.Value.nodeId, parentNodeId.Value.backendNodeId);
+
+                var doc = (await GetDocument());
+                return (doc.nodeId, doc.backendNodeId);
+            }
+
+            public async Task<NodeId> QuerySelector (string selector, NodeId? parentNodeId = null) {
+                var id = await GetParentNodeIds(parentNodeId);
+
+                object p;
+                if (id.nodeId != null)
+                    p = new {
+                        id.nodeId,
+                        selector
+                    };
+                else
+                    throw new Exception("No parentNodeId to query inside of");
+
+                var result = await Client.SendAndGetResult<NodeId>("DOM.querySelector", p);
                 return result;
             }
 
-            public async Task<NodeId> QuerySelector (string selector, int? parentNodeId = null) {
-                int nodeId;
-                if (parentNodeId.HasValue)
-                    nodeId = parentNodeId.Value;
+            public async Task<IEnumerable<NodeId>> QuerySelectorAll (string selector, NodeId? parentNodeId = null) {
+                var id = await GetParentNodeIds(parentNodeId);
+
+                object p;
+                if (id.nodeId != null)
+                    p = new {
+                        id.nodeId,
+                        selector
+                    };
                 else
-                    nodeId = (await GetDocument()).Id;
+                    throw new Exception("No parentNodeId to query inside of");
 
-                var result = await Client.SendAndGetResult<NodeId>("DOM.querySelector", new {
-                    nodeId, selector
-                });
-                return result;
-            }
-
-            public async Task<IEnumerable<NodeId>> QuerySelectorAll (string selector, int? parentNodeId = null) {
-                int nodeId;
-                if (parentNodeId.HasValue)
-                    nodeId = parentNodeId.Value;
-                else
-                    nodeId = (await GetDocument()).Id;
-
-                var result = await Client.SendAndGetResult<NodeIds>("DOM.querySelectorAll", new {
-                    nodeId, selector
-                });
-                return result.nodeIds.Select(i => new NodeId(i));
+                var result = await Client.SendAndGetResult<NodeIds>("DOM.querySelectorAll", p);
+                return result.nodeIds.Select(i => new NodeId(i, null));
             }
 
             public async Task<BoxModel> GetBoxModel (NodeId id) {

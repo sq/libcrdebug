@@ -15,36 +15,35 @@ namespace crdebug.RemoteTypes {
     }
 
     public struct NodeId {
-        public int nodeId;
+        public int? nodeId;
+        public int? backendNodeId;
 
-        public NodeId (int id) {
-            nodeId = id;
-        }
-
-        public static implicit operator int (NodeId id) {
-            return id.nodeId;
+        public NodeId (int? nodeId, int? backendNodeId) {
+            this.nodeId = nodeId;
+            this.backendNodeId = backendNodeId;
         }
 
         public static implicit operator bool (NodeId id) {
-            return (id.nodeId != 0);
+            return (id.nodeId != 0) || (id.backendNodeId != 0);
         }
     }
 
     public class Node {
         internal int depth;
         public int nodeId;
+        public int? backendNodeId;
         public int? parentId;
 
         public NodeId Id {
             get {
-                return new NodeId(nodeId);
+                return new NodeId(nodeId, backendNodeId);
             }
         }
 
         public NodeId? ParentId {
             get {
                 if (parentId.HasValue)
-                    return new NodeId(parentId.Value);
+                    return new NodeId(parentId.Value, null);
 
                 return null;
             }

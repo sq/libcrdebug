@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.ExceptionServices;
@@ -34,6 +35,11 @@ namespace crdebug {
             public string message;
         }
 
+        /// <summary>
+        /// Specifies how deep retrieved document and element descriptions should be by default
+        /// </summary>
+        public int DefaultDescriptionDepth = 1;
+
         private readonly Dictionary<int, IFuture> PendingTokens = new Dictionary<int, IFuture>();
         private readonly Dictionary<string, List<IFuture>> EventWaits = new Dictionary<string, List<IFuture>>();
 
@@ -59,6 +65,16 @@ namespace crdebug {
         /// Fired whenever a new message is received. Return true to indicate that you handled it.
         /// </summary>
         public event Func<string, bool> OnIncomingJson;
+
+        /// <summary>
+        /// If specified, all outgoing json will be logged to this stream
+        /// </summary>
+        public TextWriter SendTraceStream;
+
+        /// <summary>
+        /// If specified, all outgoing json will be logged to this stream
+        /// </summary>
+        public TextWriter ReceiveTraceStream;
 
         public DebugClient (BrowserInstance browser, TabInfo tab) {
             Browser = browser;
@@ -121,6 +137,8 @@ namespace crdebug {
                     }
                 }
 
+                ReceiveTraceStream?.WriteLine($"recv '{json}'");
+
                 if ((OnIncomingJson != null) && OnIncomingJson(json))
                     continue;
 
@@ -174,6 +192,9 @@ namespace crdebug {
             int _id = id ?? NextId++;
             dict.Add("id", _id);
             var json = JsonConvert.SerializeObject(dict, Formatting.None);
+
+            SendTraceStream?.WriteLine($"send '{json}'");
+
             var bytes = Encoding.UTF8.GetBytes(json);
 
             var _f = f;
