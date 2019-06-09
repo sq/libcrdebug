@@ -29,9 +29,6 @@
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
@@ -54,6 +51,10 @@
     <ProjectReference Include="External\Fracture\Squared\Threading\Squared.Threading.csproj">
       <Project>{ECCB8787-0FC6-43B2-ABD1-6CBB237916EC}</Project>
       <Name>Squared.Threading</Name>
+    </ProjectReference>
+    <ProjectReference Include="External\Newtonsoft.Json\Src\Newtonsoft.Json\Newtonsoft.Json.csproj">
+      <Project>{d338ee3b-709d-4900-a843-0dd9ad780dbe}</Project>
+      <Name>Newtonsoft.Json</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

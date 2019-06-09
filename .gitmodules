@@ -1,3 +1,6 @@
 [submodule "External/Fracture"]
 	path = External/Fracture
 	url = https://github.com/sq/Fracture.git
+[submodule "External/Newtonsoft.Json"]
+	path = External/Newtonsoft.Json
+	url = https://github.com/JamesNK/Newtonsoft.Json.git
