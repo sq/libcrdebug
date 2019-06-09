@@ -276,7 +276,7 @@ namespace crdebug {
                 return result;
             }
 
-            public async Task<IEnumerable<NodeId>> QuerySelectorAll (string selector, NodeId? parentNodeId = null) {
+            public async Task<List<NodeId>> QuerySelectorAll (string selector, NodeId? parentNodeId = null) {
                 var id = await GetParentNodeIds(parentNodeId);
 
                 object p;
@@ -289,7 +289,43 @@ namespace crdebug {
                     throw new Exception("No parentNodeId to query inside of");
 
                 var result = await Client.SendAndGetResult<NodeIds>("DOM.querySelectorAll", p);
-                return result.nodeIds.Select(i => new NodeId(i, null));
+                return result.nodeIds.Select(i => new NodeId(i, null)).ToList();
+            }
+
+            public async Task<Node> QueryAndDescribeSelector (string selector, NodeId? parentNodeId = null, int? depth = null) {
+                var id = await GetParentNodeIds(parentNodeId);
+
+                object p;
+                if (id.nodeId != null)
+                    p = new {
+                        id.nodeId,
+                        selector
+                    };
+                else
+                    throw new Exception("No parentNodeId to query inside of");
+
+                var node = await Client.SendAndGetResult<NodeId>("DOM.querySelector", p);
+                var result = await DescribeNode(node, depth);
+                return result;
+            }
+
+            public async Task<List<Node>> QueryAndDescribeSelectorAll (string selector, NodeId? parentNodeId = null, int? depth = null) {
+                var id = await GetParentNodeIds(parentNodeId);
+
+                object p;
+                if (id.nodeId != null)
+                    p = new {
+                        id.nodeId,
+                        selector
+                    };
+                else
+                    throw new Exception("No parentNodeId to query inside of");
+
+                var results = new List<Node>();
+                var nodes = await Client.SendAndGetResult<NodeIds>("DOM.querySelectorAll", p);
+                foreach (var nodeId in nodes.nodeIds)
+                    results.Add(await DescribeNode(new NodeId(nodeId, null), depth));
+                return results;
             }
 
             public async Task<BoxModel> GetBoxModel (NodeId id) {
