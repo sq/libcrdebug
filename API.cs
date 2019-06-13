@@ -516,7 +516,10 @@ namespace crdebug {
                 return obj;
             }
 
-            public async Task<RemoteObject> CallFunctionOn (RemoteObject @this, string functionDeclaration, params object[] arguments) {
+            public async Task<RemoteObject> CallFunctionOn (RemoteObject obj, string functionDeclaration, params object[] arguments) {
+                if (obj == null)
+                    throw new ArgumentNullException("obj");
+
                 var callArguments = new List<object>();
 
                 if (arguments != null)
@@ -536,7 +539,7 @@ namespace crdebug {
 
                 var result = await Client.SendAndGetResult<ObjectOrException<RemoteObject>>("Runtime.callFunctionOn", new {
                     functionDeclaration,
-                    @this.objectId,
+                    obj.objectId,
                     arguments = callArguments.ToArray(),
                     userGesture = true,
                     objectGroup
