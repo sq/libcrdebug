@@ -429,7 +429,10 @@ namespace crdebug {
 
             public async Task<LayoutMetrics> GetLayoutMetrics () {
                 var result = Client.SendAndGetResult<LayoutMetrics>("Page.getLayoutMetrics");
-                return await result;
+                var metrics = await result;
+                using (var dpr = await Evaluate("window.devicePixelRatio"))
+                    metrics.devicePixelRatio = Convert.ToDouble(dpr.value ?? 1.0);
+                return metrics;
             }
 
             public async Task MouseMove (int x, int y) {

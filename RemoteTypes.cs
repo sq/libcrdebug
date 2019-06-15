@@ -266,6 +266,9 @@ namespace crdebug.RemoteTypes {
         public LayoutViewport layoutViewport;
         public VisualViewport visualViewport;
         public DOMRect contentSize;
+        // HACK: You basically are guaranteed to need this because it's not encoded in any of
+        //  the above structures.
+        public double devicePixelRatio;
     }
 
     public class ScreencastFrameMetadata {
