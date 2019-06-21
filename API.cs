@@ -11,7 +11,7 @@ using crdebug.Exceptions;
 namespace crdebug {
     public partial class DebugClient {
         public class APIInstance {
-            class ObjectOrException<T> where T : RemoteObject {
+            public class ObjectOrException<T> where T : RemoteObject {
                 public T result;
                 public ExceptionDetails exceptionDetails;
             }
@@ -519,7 +519,11 @@ namespace crdebug {
                 return obj;
             }
 
-            public async Task<RemoteObject> CallFunctionOn (RemoteObject obj, string functionDeclaration, params object[] arguments) {
+            public Task<RemoteObject> CallFunctionOn (RemoteObject obj, string functionDeclaration, params object[] arguments) {
+                return CallFunctionOnWithFuture(obj, functionDeclaration, null, arguments);
+            }
+
+            public async Task<RemoteObject> CallFunctionOnWithFuture (RemoteObject obj, string functionDeclaration, IFuture future, params object[] arguments) {
                 if (obj == null)
                     throw new ArgumentNullException("obj");
 
@@ -557,15 +561,22 @@ namespace crdebug {
                 return result.result;
             }
 
-            public Task<RemoteObject> CallMethod (RemoteObject @this, string methodName, params object[] arguments) {
+            public Task<RemoteObject> CallMethodWithFuture (
+                RemoteObject @this, string methodName, 
+                IFuture future, params object[] arguments
+            ) {
                 var fn = "function () { return this." + methodName + ".apply(this, arguments); }";
-                return CallFunctionOn(@this, fn, arguments);
+                return CallFunctionOnWithFuture(@this, fn, future, arguments);
             }
 
-            public async Task<RemoteObject> AwaitPromise (RemoteObject promise) {
+            public Task<RemoteObject> CallMethod (RemoteObject @this, string methodName, params object[] arguments) {
+                return CallMethodWithFuture(@this, methodName, null, arguments);
+            }
+
+            public async Task<RemoteObject> AwaitPromise (RemoteObject promise, Future<ObjectOrException<RemoteObject>> future = null) {
                 var result = await Client.SendAndGetResult<ObjectOrException<RemoteObject>>("Runtime.awaitPromise", new {
                     promiseObjectId = promise.objectId
-                });
+                }, future);
 
                 TryAnnotateWithClient(result.result);
                 TryAnnotateWithClient(result.exceptionDetails?.exception);

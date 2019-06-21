@@ -13,6 +13,7 @@ namespace crdebug {
         Exception Exception { get; }
         Type ResultType { get; }
         FutureAwaitExtensionMethods.IFutureAwaiter GetAwaiter ();
+        bool TrySetResult (object value);
         void SetResult (object value);
         void SetException (Exception exception);
         void SetException (ExceptionDispatchInfo exception);
@@ -38,6 +39,13 @@ namespace crdebug {
         public Future (ExceptionDispatchInfo exception) 
             : this () {
             SetException(exception);
+        }
+
+        public bool TrySetResult (T result) {
+            if (SquaredFuture.Completed)
+                return false;
+            SquaredFuture.SetResult2(result, null);
+            return true;
         }
 
         public void SetResult (T result) {
@@ -74,6 +82,14 @@ namespace crdebug {
 
         FutureAwaitExtensionMethods.IFutureAwaiter IFuture.GetAwaiter () {
             return ((Squared.Threading.IFuture)SquaredFuture).GetAwaiter();
+        }
+
+        bool IFuture.TrySetResult (object value) {
+            var f = (Squared.Threading.IFuture)SquaredFuture;
+            if (f.Completed)
+                return false;
+            f.SetResult2(value, null);
+            return true;
         }
 
         void IFuture.SetResult (object value) {

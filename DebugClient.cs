@@ -207,7 +207,9 @@ namespace crdebug {
 
             PendingTokens.Add(_id, _f);
 
-            await WebSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, default(CancellationToken));
+            await WebSocket.SendAsync(
+                new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, default(CancellationToken)
+            );
 
             // If no future was passed in to record the result, we wait on a dummy future to propagate errors.
             if (f == null)
@@ -250,9 +252,9 @@ namespace crdebug {
             return result;
         }
 
-        public async Task<T> SendAndGetResult<T> (string method, object p = null) {
+        public async Task<T> SendAndGetResult<T> (string method, object p = null, Future<T> future = null) {
             var id = NextId++;
-            var f = new Future<T>();
+            var f = future ?? new Future<T>();
             await Send(method, p, id, f);
             return await f;
         }
