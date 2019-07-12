@@ -70,7 +70,7 @@ namespace crdebug {
             public event Action<string> OnStartedLoading;
             public event Action<Request> OnRequestStarted;
             public event Action<Request, Response> OnRequestComplete;
-            public event Action OnLoaded;
+            public event Action OnLoaded, OnPageDestroyed, OnPageCreated;
             public event Action<string, ScreencastFrameMetadata> OnScreencastFrame;
 
             private int NextGroupId = 1;
@@ -98,8 +98,11 @@ namespace crdebug {
                         Frames[frame.id] = frame;
                         OnNavigated?.Invoke(frame);
                         break;
-                    case "Page.frameStartedLoading":
+                    case "Runtime.executionContextsCleared":
+                        OnPageDestroyed?.Invoke();
                         IsScreencastStarted = false;
+                        break;
+                    case "Page.frameStartedLoading":
                         OnStartedLoading?.Invoke(args["frameId"].ToString());
                         break;
                     case "Page.loadEventFired":
