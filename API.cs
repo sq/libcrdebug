@@ -215,8 +215,15 @@ namespace crdebug {
                 else
                     throw new Exception("Neither backendNodeId or nodeId specified");
 
-                var boxed = await Client.SendAndGetResult<BoxedNode>("DOM.describeNode", p);
-                var result = boxed.node;
+                Node result;
+                try {
+                    var boxed = await Client.SendAndGetResult<BoxedNode>("DOM.describeNode", p);
+                    result = boxed.node;
+                } catch (ChromeRemoteException exc) {
+                    if (exc.Code == -32000)
+                        return default(Node);
+                    throw;
+                }
 
                 // workaround for describeNode bug https://bugs.chromium.org/p/chromium/issues/detail?id=972441
                 if (result.nodeId == 0)
@@ -334,8 +341,12 @@ namespace crdebug {
 
                 var results = new List<Node>();
                 var nodes = await Client.SendAndGetResult<NodeIds>("DOM.querySelectorAll", p);
-                foreach (var nodeId in nodes.nodeIds)
-                    results.Add(await DescribeNode(new NodeId(nodeId, null), depth));
+                foreach (var nodeId in nodes.nodeIds) {
+                    var node = await DescribeNode(new NodeId(nodeId, null), depth);
+                    if (node == null)
+                        continue;
+                    results.Add(node);
+                }
                 return results;
             }
 
