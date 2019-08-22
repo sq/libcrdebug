@@ -216,13 +216,13 @@ namespace crdebug {
                     throw new Exception("Neither backendNodeId or nodeId specified");
 
                 Node result;
-                try {
-                    var boxed = await Client.SendAndGetResult<BoxedNode>("DOM.describeNode", p);
-                    result = boxed.node;
-                } catch (ChromeRemoteException exc) {
-                    if (exc.Code == -32000)
-                        return default(Node);
-                    throw;
+                var res = await Client.SendAndGetResultOrException<BoxedNode>("DOM.describeNode", p);
+                if (res.Exception != null) {
+                    // var cre = res.Exception.SourceException as ChromeRemoteException;
+                    // res.Exception.Throw();
+                    result = default(Node);
+                } else {
+                    result = res.Result.node;
                 }
 
                 // workaround for describeNode bug https://bugs.chromium.org/p/chromium/issues/detail?id=972441
@@ -320,10 +320,12 @@ namespace crdebug {
                 else
                     throw new Exception("No parentNodeId to query inside of");
 
-                var node = await Client.SendAndGetResult<NodeId>("DOM.querySelector", p);
-                if (!node)
+                var res = await Client.SendAndGetResultOrException<NodeId>("DOM.querySelector", p);
+                if (res.Exception != null)
                     return null;
-                var result = await DescribeNode(node, depth);
+                if (!res.Result)
+                    return null;
+                var result = await DescribeNode(res.Result, depth);
                 return result;
             }
 

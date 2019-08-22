@@ -19,7 +19,7 @@ namespace crdebug.Exceptions {
         public readonly int Code;
 
         public ChromeRemoteException (int code, string message)
-            : base (message) {
+            : base (message + " #" + code) {
             Code = code;
         }
     }
