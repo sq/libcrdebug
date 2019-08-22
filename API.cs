@@ -226,10 +226,14 @@ namespace crdebug {
                 }
 
                 // workaround for describeNode bug https://bugs.chromium.org/p/chromium/issues/detail?id=972441
-                if (result.nodeId == 0)
-                    result.nodeId = id.nodeId ?? 0;
-                if (result.backendNodeId == 0)
-                    result.backendNodeId = id.backendNodeId;
+                if (result == null) {
+                    result = default(Node);
+                } else {
+                    if (result.nodeId == 0)
+                        result.nodeId = id.nodeId ?? 0;
+                    if (result.backendNodeId == 0)
+                        result.backendNodeId = id.backendNodeId;
+                }
 
                 return result;
             }
